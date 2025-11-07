@@ -26,3 +26,6 @@ npm run watch
 
 切换直接替换lib/android.js里面的代码就可以
 
+
+
+此为frida-java-bridge原始6.3.6版本
