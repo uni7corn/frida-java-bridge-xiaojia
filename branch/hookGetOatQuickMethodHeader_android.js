@@ -452,6 +452,15 @@ function _getApi () {
     }
     temporaryApi.kAccCompileDontBother = kAccCompileDontBother;
 
+    let kAccPreCompiled;
+    if (apiLevel < 30) {
+      kAccPreCompiled = 0;
+    } else if (apiLevel >= 31) {
+      kAccPreCompiled = 0x00800000;
+    } else {
+      kAccPreCompiled = 0x00200000;
+    }
+    temporaryApi.kAccPreCompiled = kAccPreCompiled;
     const artRuntime = temporaryApi.vm.add(pointerSize).readPointer();
     temporaryApi.artRuntime = artRuntime;
     const runtimeSpec = getArtRuntimeSpec(temporaryApi);
@@ -1605,7 +1614,7 @@ is_replacement_method (gpointer method)
 
   g_mutex_lock (&lock);
 
-  is_replacement = g_hash_table_contains (replacements, method);
+  is_replacement = g_hash_table_contains (methods, method);
 
   g_mutex_unlock (&lock);
 
@@ -1882,7 +1891,7 @@ function ensureArtKnowsHowToHandleReplacementMethods (vm) {
     }
 
     try {
-      // Interceptor.replace(getOatQuickMethodHeaderImpl, artController.hooks.ArtMethod.getOatQuickMethodHeader);
+      Interceptor.replace(getOatQuickMethodHeaderImpl, artController.hooks.ArtMethod.getOatQuickMethodHeader);
     } catch (e) {
       /*
        * Already replaced by another script. For now we don't support replacing methods from multiple scripts,
@@ -3375,7 +3384,7 @@ class ArtMethodMangler {
   }
 
   replace (impl, isInstanceMethod, argTypes, vm, api) {
-    const { kAccCompileDontBother, artNterpEntryPoint } = api;
+    const { kAccCompileDontBother, artNterpEntryPoint, kAccPreCompiled } = api;
 
     this.originalMethod = fetchArtMethod(this.methodId, vm);
 
@@ -3392,13 +3401,37 @@ class ArtMethodMangler {
     const replacementMethodId = cloneArtMethod(hookedMethodId, vm);
     this.replacementMethodId = replacementMethodId;
 
+    let hookAccessFlags = ((originalFlags & ~(kAccCriticalNative | kAccFastNative | kAccNterpEntryPointFastPathFlag)) | kAccNative | kAccCompileDontBother) >>> 0;
     patchArtMethod(hookedMethodId, {
       jniCode: impl,
-      accessFlags: ((originalFlags & ~(kAccCriticalNative | kAccFastNative | kAccNterpEntryPointFastPathFlag)) | kAccNative | kAccCompileDontBother) >>> 0,
+      accessFlags: hookAccessFlags,
       quickCode: api.artClassLinker.quickGenericJniTrampoline
     }, vm);
 
+    let hookedMethodRemovedFlags = kAccFastInterpreterToInterpreterInvoke | kAccSingleImplementation | kAccNterpEntryPointFastPathFlag;
+    hookedMethodRemovedFlags &= ~kAccPreCompiled;
+    if ((originalFlags & kAccNative) === 0) {
+      hookedMethodRemovedFlags |= kAccSkipAccessChecks;
+    }
+
+    let accessFlags = ((originalFlags & ~(hookedMethodRemovedFlags)) | kAccCompileDontBother) >>> 0;
+    accessFlags &= ~kAccPreCompiled;
+    accessFlags &= ~kAccFastInterpreterToInterpreterInvoke;
+    patchArtMethod(replacementMethodId, {
+      accessFlags: accessFlags
+    }, vm);
+
+    const quickCode = this.originalMethod.quickCode;
+
+    if (artNterpEntryPoint !== null && quickCode.equals(artNterpEntryPoint)) {
+      patchArtMethod(replacementMethodId, {
+        quickCode: api.artQuickToInterpreterBridge
+      }, vm);
+    }
+
     artController.replacedMethods.set(hookedMethodId, replacementMethodId);
+
+    ensureArtKnowsHowToHandleReplacementMethods(vm);
   }
 
   revert (vm) {

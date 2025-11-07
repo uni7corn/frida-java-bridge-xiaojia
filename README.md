@@ -1,40 +1,28 @@
-# frida-java-bridge
+### 修改了frida的javahook
 
-Java runtime interop from Frida. This module is bundled with Frida and exposed
-through the global named `Java`.
+其实本质上frida会更加稳定，但是我们的也是基本没什么问题的，本质上就是修改的ArtMethod。
 
-## Running the test-suite
+提供两个分支，一个hook了GetOatQuickMethod的，这个会更加稳定，但是hook了libart，一个没有hook这个的，无痕但是在特殊情况下不是很稳定。但是不代表用不了，无痕的这个函数如果hook出现了问题，你可以换一个函数去hook也许有几率会修复这个问题。
 
-### Dependencies
+编译：
 
-- Android SDK Platform-Tools >= 27.0.1
-- Android NDK r21
-
-With environment configured accordingly:
-
-```sh
-$ export ANDROID_SDK_ROOT=~/Library/Android/Sdk
-$ export ANDROID_NDK_ROOT=/usr/local/opt/android-ndk-r21
+```
+npm run build
 ```
 
-### Configuration
+得到_agent.js
 
- - Go to `/test/config.mk` for editing the device configuration settings.
 
-### Run
 
-```sh
-$ make check
+监控：
+
+```
+npm run watch
 ```
 
-### Debug
+动态更新，这个_agent.js文件也动态更新
 
-```sh
-$ make check-gdb
-```
 
-### Auto-run tests on JavaScript change
 
-```sh
-$ make develop
-```
+切换直接替换lib/android.js里面的代码就可以
+

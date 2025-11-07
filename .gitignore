@@ -1,5 +1,55 @@
-/node_modules/
-/test/.classpath
-/test/.project
-/test/build/
-/test/node_modules/
+# 依赖包
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# 编译输出文件
+_agent.js
+*.js.map
+dist/
+build/
+
+# 日志文件
+logs/
+*.log
+
+# 操作系统生成的文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# IDE 配置文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# 临时文件
+*.tmp
+*.temp
+*.bak
+*.cache
+
+# 环境变量文件
+.env
+.env.local
+.env.*.local
+
+# 测试覆盖率
+coverage/
+.nyc_output/
+
+# 其他
+.eslintcache
+
