@@ -53,5 +53,5 @@ coverage/
 # 其他
 .eslintcache
 
-.specstory
-.github
+.specstory/
+.github/
