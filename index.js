@@ -602,8 +602,8 @@ Script.bindWeak(runtime, () => { runtime._dispose(); });
 
 module.exports = runtime;
 
-Object.defineProperty(global, "Java", {
-    value: runtime
-})
-
-console.log(Java)
+// Object.defineProperty(global, "Java", {
+//     value: runtime
+// })
+//
+// console.log(Java)
